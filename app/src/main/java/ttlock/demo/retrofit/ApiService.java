@@ -132,4 +132,12 @@ public interface ApiService {
     @POST("/v3/wirelessKeyboard/add ")
     @FormUrlEncoded
     Call<ResponseBody> addWirelessKeypad(@FieldMap Map<String, String> params);
+
+    @POST("/v3/gateway/listLock")
+    @FormUrlEncoded
+    Call<String> gatewayListLock(@Field("clientId") String clientId, @Field("accessToken") String accessToken, @Field("gatewayId") int lockId, @Field("date") long date);
+
+    @POST("/v3/lock/unlock")
+    @FormUrlEncoded
+    Call<ResponseBody> lockUnlock(@Field("clientId") String clientId, @Field("accessToken") String accessToken, @Field("lockId") int lockId, @Field("date") long date);
 }

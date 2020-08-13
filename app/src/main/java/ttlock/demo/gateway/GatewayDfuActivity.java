@@ -6,10 +6,18 @@ import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.view.View;
 
+import com.google.gson.reflect.TypeToken;
 import com.ttlock.bl.sdk.gateway.api.GatewayDfuClient;
 import com.ttlock.bl.sdk.gateway.callback.DfuCallback;
 import com.ttlock.bl.sdk.util.GsonUtil;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import ttlock.demo.BaseActivity;
@@ -18,6 +26,7 @@ import ttlock.demo.R;
 import ttlock.demo.databinding.ActivityGatewayDfuBinding;
 import ttlock.demo.gateway.model.GatewayUpgradeObj;
 import ttlock.demo.model.GatewayObj;
+import ttlock.demo.model.LockObj;
 import ttlock.demo.retrofit.ApiService;
 import ttlock.demo.retrofit.RetrofitAPIManager;
 
@@ -34,6 +43,58 @@ public class GatewayDfuActivity extends BaseActivity {
         parseIntent(getIntent());
         check();
         initListener();
+
+        fetchLocksAndUnlock(gatewayObj.getGatewayId());
+    }
+
+    private void fetchLocksAndUnlock(int gatewayId) {
+        ApiService apiService = RetrofitAPIManager.provideClientApi();
+
+        Call<String> call = apiService.gatewayListLock(ApiService.CLIENT_ID, MyApplication.getmInstance().getAccountInfo().getAccess_token(), gatewayId, System.currentTimeMillis());
+        call.enqueue(new Callback<String>() {
+            @Override
+            public void onResponse(Call<String> call, retrofit2.Response<String> response) {
+                String json = response.body();
+                if (json.contains("list")) {
+                    try {
+                        JSONObject jsonObject = new JSONObject(json);
+                        JSONArray array = jsonObject.getJSONArray("list");
+                        JSONObject firstLockObject = array.getJSONObject(0);
+                        int firstLockId = firstLockObject.getInt("lockId");
+
+                        lockUnlock(firstLockId);
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    makeToast(json);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<String> call, Throwable t) {
+                makeToast(t.getMessage());
+            }
+        });
+    }
+
+    private void lockUnlock(int lockId) {
+        ApiService apiService = RetrofitAPIManager.provideClientApi();
+
+        Call<ResponseBody> call = apiService.lockUnlock(ApiService.CLIENT_ID,  MyApplication.getmInstance().getAccountInfo().getAccess_token(), lockId,System.currentTimeMillis());
+        RetrofitAPIManager.enqueue(call, new TypeToken<Object>(){}, result -> {
+            if(!result.success){
+                makeToast("--unlock  fail-" + result.getMsg());
+                return;
+            }
+
+            makeToast("-unlock success-");
+
+
+        }, requestError -> {
+            makeToast("--unlock fail-" + requestError.getMessage());
+        });
     }
 
     private void updateUI() {
