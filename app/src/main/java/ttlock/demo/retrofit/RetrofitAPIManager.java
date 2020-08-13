@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Converter;
 import retrofit2.Retrofit;
@@ -47,10 +48,14 @@ public class RetrofitAPIManager {
     }
 
     public static OkHttpClient genericClient() {
+        HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
+        interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+
         OkHttpClient httpClient = new OkHttpClient.Builder()
                 .connectTimeout(35, TimeUnit.SECONDS)
                 .readTimeout(35, TimeUnit.SECONDS)
                 .writeTimeout(35, TimeUnit.SECONDS)
+                .addInterceptor(interceptor)
                 .build();
 
         return httpClient;
